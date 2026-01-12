@@ -203,7 +203,7 @@ function handleDate(){
 function getUTC(date,shift){
   let s,e;const d=new Date(date);
   if(shift==="morning"){s=`${date}T00:30:00.000Z`;e=`${date}T08:30:00.000Z`}
-  if(shift==="afternoon"){s=`${date}T08:30:00.000Z`;e=`${date}T17:30:00.000Z`}
+  if(shift==="afternoon"){s=`${date}T08:30:00.000Z`;e=`${date}T16:30:00.000Z`}
   if(shift==="night"){
     s=`${date}T16:30:00.000Z`;
     d.setDate(d.getDate()+1);
@@ -231,3 +231,4 @@ function generateLinks(){
 
 </body>
 </html>
+
