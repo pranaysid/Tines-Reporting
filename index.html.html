@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🛡️ Tines Shift Dashboard</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .glass {
+      width: 520px;
+      padding: 30px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+    }
+
+    /* ----- DATE PICKER FIX ----- */
+    .date-wrapper {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .date-display {
+      background: rgba(255,255,255,0.9);
+      cursor: pointer;
+    }
+
+    .calendar-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ffffff, #dfe9f3);
+      margin-top: 6px;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.3);
+      margin: 24px 0;
+    }
+
+    .report-links a {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      text-decoration: none;
+      opacity: 0.9;
+    }
+
+    .report-links a.disabled {
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="glass">
+  <h2>🛡️ Tines Shift Dashboard</h2>
+
+  <!-- DATE PICKER -->
+  <div class="field">
+    <label>📅 Date</label>
+    <div class="date-wrapper" onclick="openCalendar()">
+      <input
+        type="text"
+        id="dateDisplay"
+        class="date-display"
+        placeholder="DD-MM-YYYY"
+        readonly
+      />
+      <input
+        type="date"
+        id="date"
+        class="calendar-input"
+        onchange="handleDateChange()"
+      />
+    </div>
+  </div>
+
+  <!-- SHIFT -->
+  <div class="field">
+    <label>⏰ Shift</label>
+    <select id="shift" onchange="generateReportLinks()">
+      <option value="">-- Select Shift --</option>
+      <option value="morning">🌅 Morning (6 AM – 2 PM)</option>
+      <option value="afternoon">🌇 Afternoon (2 PM – 11 PM)</option>
+      <option value="night">🌙 Night (10 PM – 6 AM)</option>
+    </select>
+  </div>
+
+  <button onclick="openOpenCases()">🚀 Open Active Cases</button>
+
+  <div class="divider"></div>
+
+  <h3>📊 Shift Reporting</h3>
+
+  <div class="report-links">
+    <a id="totalTriggered" class="disabled" target="_blank">📌 Total cases triggered</a>
+    <a id="totalOpen" class="disabled" target="_blank">🚨 Total open cases</a>
+    <a id="totalClosed" class="disabled" target="_blank">✅ Total cases handled / closed</a>
+  </div>
+
+
+</div>
+
+<script>
+/* ----- OPEN CALENDAR (Cross-browser) ----- */
+function openCalendar() {
+  const dateInput = document.getElementById("date");
+  if (dateInput.showPicker) {
+    dateInput.showPicker();
+  } else {
+    dateInput.focus();
+  }
+}
+
+/* ----- HANDLE DATE CHANGE ----- */
+function handleDateChange() {
+  const dateValue = document.getElementById("date").value;
+  if (!dateValue) return;
+
+  const [yyyy, mm, dd] = dateValue.split("-");
+  document.getElementById("dateDisplay").value = `${dd}-${mm}-${yyyy}`;
+
+  generateReportLinks();
+}
+
+/* ----- SHIFT UTC WINDOWS ----- */
+function getUTCWindow(date, shift) {
+  let startUTC, endUTC;
+  const d = new Date(date);
+
+  if (shift === "morning") {
+    startUTC = `${date}T00:30:00.000Z`;
+    endUTC   = `${date}T08:30:00.000Z`;
+  }
+
+  if (shift === "afternoon") {
+    startUTC = `${date}T08:30:00.000Z`;
+    endUTC   = `${date}T17:30:00.000Z`;
+  }
+
+  if (shift === "night") {
+    startUTC = `${date}T16:30:00.000Z`;
+    d.setDate(d.getDate() + 1);
+    const next = d.toISOString().split("T")[0];
+    endUTC = `${next}T00:30:00.000Z`;
+  }
+
+  return { startUTC, endUTC };
+}
+
+/* ----- REPORT LINKS ----- */
+function generateReportLinks() {
+  const date = document.getElementById("date").value;
+  const shift = document.getElementById("shift").value;
+  if (!date || !shift) return;
+
+  const { startUTC, endUTC } = getUTCWindow(date, shift);
+
+  const base = "https://intezer-managed-soar.tines.com/teams/65868/cases";
+  const common = {
+    sort: "RECENTLY_EDITED",
+    v: "2",
+    view: "list",
+    "filter[child_team_ids]": "[72143,72144]",
+    "filter[date][start]": startUTC,
+    "filter[date][end]": endUTC
+  };
+
+  setLink("totalTriggered", base, common);
+  setLink("totalOpen", base, { ...common, "filter[subStatus]": "escalated,in_progress" });
+  setLink("totalClosed", base, {
+    ...common,
+    "filter[subStatus]":
+      "done,canceled,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate"
+  });
+}
+
+function setLink(id, base, params) {
+  const el = document.getElementById(id);
+  el.href = `${base}?${new URLSearchParams(params)}`;
+  el.classList.remove("disabled");
+}
+
+/* ----- OPEN ACTIVE CASES ----- */
+function openOpenCases() {
+  const link = document.getElementById("totalOpen").href;
+  if (!link) {
+    alert("📅 Select date and shift first");
+    return;
+  }
+  window.open(link, "_blank");
+}
+</script>
+
+</body>
+</html>
