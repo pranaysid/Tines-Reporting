@@ -25,6 +25,33 @@ body{
   color:#fff;
 }
 
+/* =========================
+   TI TOOL FIXED BUTTON
+   ========================= */
+.ti-tool{
+  position:fixed;
+  top:20px;
+  right:24px;
+  z-index:9999;
+  padding:10px 16px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.25);
+  border:1px solid rgba(255,255,255,0.4);
+  color:#fff;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+  transition:.25s ease;
+}
+.ti-tool:hover{
+  background:rgba(255,255,255,0.4);
+  transform:translateY(-1px);
+}
+
+/* ========================= */
+
 .dashboard{
   width:560px;
   padding:28px;
@@ -97,7 +124,6 @@ h3{
   color:#fff;
   text-decoration:none;
   display:flex;
-  justify-content:space-between;
   align-items:center;
   font-size:15px;
 }
@@ -105,11 +131,6 @@ h3{
 .card a.disabled{
   opacity:.4;
   pointer-events:none;
-}
-
-.card span{
-  font-size:13px;
-  opacity:.8;
 }
 
 .footer{
@@ -122,6 +143,11 @@ h3{
 </head>
 
 <body>
+
+<!-- FIXED TOP-RIGHT BUTTON -->
+<a class="ti-tool" href="https://osintdb.vercel.app" target="_blank">
+  🕵️ TI Tool
+</a>
 
 <div class="dashboard">
   <h2>🛡️ Tines Shift Dashboard</h2>
@@ -163,30 +189,25 @@ h3{
     <div class="card">
       <a id="open" class="disabled" target="_blank">
         🚨 Total open cases
-        
       </a>
     </div>
 
-    <!-- SPLIT CARD 1 -->
     <div class="card">
       <a id="closed" class="disabled" target="_blank">
         ✅ Closed / Handled cases
-        
       </a>
     </div>
 
-    <!-- SPLIT CARD 2 -->
     <div class="card">
       <a id="onhold" class="disabled" target="_blank">
         ⏸ On Hold cases
-        
       </a>
     </div>
 
   </div>
 
   <div class="footer">
-   ⚔️ GCC SOC India
+    ⚔️ GCC SOC India
   </div>
 </div>
 
@@ -195,40 +216,66 @@ function openCalendar(){
   const d=document.getElementById("date");
   d.showPicker?d.showPicker():d.focus();
 }
+
 function handleDate(){
   const v=date.value.split("-");
   dateDisplay.value=`${v[2]}-${v[1]}-${v[0]}`;
   generateLinks();
 }
+
 function getUTC(date,shift){
-  let s,e;const d=new Date(date);
-  if(shift==="morning"){s=`${date}T00:30:00.000Z`;e=`${date}T08:30:00.000Z`}
-  if(shift==="afternoon"){s=`${date}T08:30:00.000Z`;e=`${date}T16:30:00.000Z`}
+  let s,e;
+  const d=new Date(date);
+  if(shift==="morning"){
+    s=`${date}T00:30:00.000Z`;
+    e=`${date}T08:30:00.000Z`;
+  }
+  if(shift==="afternoon"){
+    s=`${date}T08:30:00.000Z`;
+    e=`${date}T16:30:00.000Z`;
+  }
   if(shift==="night"){
     s=`${date}T16:30:00.000Z`;
     d.setDate(d.getDate()+1);
-    e=`${d.toISOString().split("T")[0]}T00:30:00.000Z`
+    e=`${d.toISOString().split("T")[0]}T00:30:00.000Z`;
   }
   return {s,e};
 }
+
 function enable(id,url){
   const a=document.getElementById(id);
   a.href=url;
   a.classList.remove("disabled");
 }
+
 function generateLinks(){
-  if(!date.value||!shift.value)return;
+  if(!date.value||!shift.value) return;
+
   const {s,e}=getUTC(date.value,shift.value);
   const base="https://intezer-managed-soar.tines.com/teams/65868/cases";
-  const common={"filter[child_team_ids]":"[72143,72144]",view:"list",v:2};
+  const common={
+    "filter[child_team_ids]":"[72143,72144]",
+    view:"list",
+    v:2
+  };
 
-  enable("triggered",`${base}?${new URLSearchParams({...common,sort:"RECENTLY_EDITED","filter[date][start]":s,"filter[date][end]":e})}`);
-  enable("open",`${base}?${new URLSearchParams({...common,"filter[subStatus]":"escalated,in_progress","filter[date][start]":s,"filter[date][end]":e})}`);
-  enable("closed",`${base}?${new URLSearchParams({...common,"filter[subStatus]":"done,canceled,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate","filter[resolved][start]":s,"filter[resolved][end]":e})}`);
-  enable("onhold",`${base}?${new URLSearchParams({...common,"filter[subStatus]":"on_hold","filter[date][start]":s,"filter[date][end]":e})}`);
+  enable("triggered",
+    `${base}?${new URLSearchParams({...common,sort:"RECENTLY_EDITED","filter[date][start]":s,"filter[date][end]":e})}`
+  );
+
+  enable("open",
+    `${base}?${new URLSearchParams({...common,"filter[subStatus]":"escalated,in_progress","filter[date][start]":s,"filter[date][end]":e})}`
+  );
+
+  enable("closed",
+    `${base}?${new URLSearchParams({...common,"filter[subStatus]":"done,canceled,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate","filter[resolved][start]":s,"filter[resolved][end]":e})}`
+  );
+
+  enable("onhold",
+    `${base}?${new URLSearchParams({...common,"filter[subStatus]":"on_hold","filter[date][start]":s,"filter[date][end]":e})}`
+  );
 }
 </script>
 
 </body>
 </html>
-
