@@ -68,6 +68,17 @@ body{
 .search-top button:hover{
   background:rgba(255,255,255,0.4);
 }
+.title{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+
+.logo{
+  height:36px;
+  width:auto;
+}
 
 .search-modes{
   display:flex;
@@ -167,7 +178,11 @@ h3{margin:0 0 14px;text-align:center;font-weight:500}
 </a>
 
 <div class="dashboard">
-  <h2>🛡️ Tines Shift Dashboard</h2>
+ <h2 class="title">
+  <img src="tines-removebg-preview.png" alt="Tines Logo" class="logo">
+  Tines Shift Dashboard
+</h2>
+
 
   <div class="controls">
     <div>
@@ -284,4 +299,5 @@ function generateLinks(){
 
 </body>
 </html>
+
 
