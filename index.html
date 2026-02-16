@@ -153,7 +153,7 @@ h3{margin:0 0 14px;text-align:center;font-weight:500}
 .card{background:var(--card-bg);border-radius:16px;padding:14px 16px;transition:.2s ease}
 .card:hover{background:var(--hover-bg)}
 .card a{color:#fff;text-decoration:none;display:flex;align-items:center;font-size:15px}
-.card a.disabled{opacity:.4;pointer-events:none}
+.card a.disabled{opacity:.4;pointer-events:none;cursor:not-allowed}
 .footer{margin-top:18px;text-align:center;font-size:12px;opacity:.75}
 </style>
 </head>
@@ -179,7 +179,7 @@ h3{margin:0 0 14px;text-align:center;font-weight:500}
 
 <div class="dashboard">
  <h2 class="title">
-  <img src="tines-removebg-preview.png" alt="Tines Logo" class="logo">
+  <img src="tines-removebg-preview.png" alt="Tines Logo" class="logo" onerror="this.style.display='none'">
   Tines Shift Dashboard
 </h2>
 
@@ -208,10 +208,10 @@ h3{margin:0 0 14px;text-align:center;font-weight:500}
   <h3>📊 Shift Reporting</h3>
 
   <div class="cards">
-    <div class="card"><a id="triggered" class="disabled" target="_blank">1️⃣ Total cases triggered</a></div>
-    <div class="card"><a id="open" class="disabled" target="_blank">🚨 Total open cases</a></div>
-    <div class="card"><a id="closed" class="disabled" target="_blank">✅ Closed / Handled cases</a></div>
-    <div class="card"><a id="onhold" class="disabled" target="_blank">⏸ On Hold cases</a></div>
+    <div class="card"><a id="triggered" class="disabled" href="#" target="_blank">1️⃣ Total cases triggered</a></div>
+    <div class="card"><a id="open" class="disabled" href="#" target="_blank">🚨 Total open cases</a></div>
+    <div class="card"><a id="closed" class="disabled" href="#" target="_blank">✅ Closed / Handled cases</a></div>
+    <div class="card"><a id="onhold" class="disabled" href="#" target="_blank">⏸ On Hold cases</a></div>
   </div>
 
   <div class="footer">⚔️ GCC SOC India</div>
@@ -246,58 +246,112 @@ function searchTines(){
 
 function openCalendar(){
   const d=document.getElementById("date");
-  d.showPicker?d.showPicker():d.focus();
+  if(d.showPicker) {
+    d.showPicker();
+  } else {
+    d.focus();
+  }
 }
 
 function handleDate(){
-  const v=date.value.split("-");
-  dateDisplay.value=`${v[2]}-${v[1]}-${v[0]}`;
+  const dateInput = document.getElementById("date");
+  const dateDisplay = document.getElementById("dateDisplay");
+  
+  if(!dateInput.value) return;
+  
+  const v = dateInput.value.split("-");
+  dateDisplay.value = `${v[2]}-${v[1]}-${v[0]}`;
+  
+  console.log("Date selected:", dateInput.value);
   generateLinks();
 }
 
-function getUTC(date,shift){
-  let s,e;
-  const d=new Date(date);
-  if(shift==="morning"){
-    s=`${date}T00:30:00.000Z`;
-    e=`${date}T08:30:00.000Z`;
+function getUTC(date, shift){
+  let s, e;
+  const d = new Date(date + "T00:00:00");
+  
+  if(shift === "morning"){
+    s = `${date}T00:30:00.000Z`;
+    e = `${date}T08:30:00.000Z`;
   }
-  if(shift==="afternoon"){
-    s=`${date}T08:30:00.000Z`;
-    e=`${date}T16:30:00.000Z`;
+  else if(shift === "afternoon"){
+    s = `${date}T08:30:00.000Z`;
+    e = `${date}T16:30:00.000Z`;
   }
-  if(shift==="night"){
-    s=`${date}T16:30:00.000Z`;
-    d.setDate(d.getDate()+1);
-    e=`${d.toISOString().split("T")[0]}T00:30:00.000Z`;
+  else if(shift === "night"){
+    s = `${date}T16:30:00.000Z`;
+    d.setDate(d.getDate() + 1);
+    const nextDay = d.toISOString().split("T")[0];
+    e = `${nextDay}T00:30:00.000Z`;
   }
-  return {s,e};
+  
+  console.log("Time range:", s, "to", e);
+  return {s, e};
 }
 
-function enable(id,url){
-  const a=document.getElementById(id);
-  a.href=url;
+function enable(id, url){
+  const a = document.getElementById(id);
+  a.href = url;
   a.classList.remove("disabled");
+  console.log(`Enabled ${id}:`, url);
 }
 
 function generateLinks(){
-  if(!date.value||!shift.value) return;
+  const dateInput = document.getElementById("date");
+  const shiftSelect = document.getElementById("shift");
+  
+  console.log("Generate called - Date:", dateInput.value, "Shift:", shiftSelect.value);
+  
+  if(!dateInput.value || !shiftSelect.value) {
+    console.log("Missing date or shift");
+    return;
+  }
 
-  const {s,e}=getUTC(date.value,shift.value);
-  const base="https://intezer-managed-soar.tines.com/teams/65868/cases";
-  const common={
-    "filter[child_team_ids]":"[72143,72144]",
-    view:"list",
-    v:2
+  const {s, e} = getUTC(dateInput.value, shiftSelect.value);
+  const base = "https://intezer-managed-soar.tines.com/teams/65868/cases";
+  
+  const common = {
+    sort: "RECENTLY_EDITED",
+    view: "list",
+    "filter[date][start]": s,
+    "filter[date][end]": e,
+    "filter[child_team_ids]": "[72143,72144]",
+    v: "2"
   };
 
-  enable("triggered",
-    `${base}?${new URLSearchParams({...common,sort:"RECENTLY_EDITED","filter[date][start]":s,"filter[date][end]":e})}`
-  );
+  // Total cases triggered (all cases in time range)
+  const triggeredUrl = `${base}?${new URLSearchParams(common).toString()}`;
+  enable("triggered", triggeredUrl);
+
+  // Total open cases (status = OPEN with specific substatuses)
+  const openParams = {
+    ...common,
+    "filter[status]": "OPEN",
+    "filter[subStatus]": "escalated,in_progress,on_hold"
+  };
+  const openUrl = `${base}?${new URLSearchParams(openParams).toString()}`;
+  enable("open", openUrl);
+
+  // Closed / Handled cases (status = CLOSED with all closure substatuses)
+  const closedParams = {
+    ...common,
+    "filter[status]": "CLOSED",
+    "filter[subStatus]": "done,canceled,automatically_closed,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate"
+  };
+  const closedUrl = `${base}?${new URLSearchParams(closedParams).toString()}`;
+  enable("closed", closedUrl);
+
+  // On Hold cases (substatus = on_hold only)
+  const onholdParams = {
+    ...common,
+    "filter[subStatus]": "on_hold"
+  };
+  const onholdUrl = `${base}?${new URLSearchParams(onholdParams).toString()}`;
+  enable("onhold", onholdUrl);
+  
+  console.log("All links generated successfully");
 }
 </script>
 
 </body>
 </html>
-
-
