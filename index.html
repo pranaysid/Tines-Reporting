@@ -279,11 +279,16 @@ function getUTC(date, shift){
     e = `${date}T16:30:00.000Z`;
   }
   else if(shift === "night"){
-    s = `${date}T16:30:00.000Z`;
-    d.setDate(d.getDate() + 1);
-    const nextDay = d.toISOString().split("T")[0];
-    e = `${nextDay}T00:30:00.000Z`;
-  }
+  s = `${date}T16:30:00.000Z`;
+
+  const d = new Date(date + "T00:00:00");
+  d.setDate(d.getDate() + 1);
+  const nextDay = d.toISOString().split("T")[0];
+
+  // End time should be 00:30 of next day
+  e = `${nextDay}T00:30:00.000Z`;
+}
+
   
   console.log("Time range:", s, "to", e);
   return {s, e};
@@ -355,3 +360,4 @@ function generateLinks(){
 
 </body>
 </html>
+
