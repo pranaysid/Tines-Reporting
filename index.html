@@ -2,362 +2,578 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>🛡️ Tines Shift Dashboard</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tines Shift Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --glass-bg: rgba(255,255,255,0.16);
-  --glass-border: rgba(255,255,255,0.25);
-  --card-bg: rgba(255,255,255,0.18);
-  --hover-bg: rgba(255,255,255,0.28);
-}
+  :root {
+    --bg: #0d1421;
+    --surface: #111822;
+    --surface2: #161b22;
+    --border: #21262d;
+    --border-bright: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d29922;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #484f58;
+  }
 
-*{box-sizing:border-box}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:"Segoe UI",system-ui,sans-serif;
-  background:radial-gradient(circle at top,#2c5364,#0f2027 70%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    overflow-x: hidden;
+  }
 
-/* =========================
-   TOP LEFT SEARCH SYSTEM
-   ========================= */
-.search-box{
-  position:fixed;
-  top:20px;
-  left:24px;
-  z-index:9999;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  width:300px;
-}
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.search-top{
-  display:flex;
-  gap:8px;
-}
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(88,166,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.search-top input{
-  flex:1;
-  padding:10px 14px;
-  border-radius:14px;
-  border:none;
-  font-size:13px;
-}
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+  }
 
-.search-top button{
-  padding:10px 14px;
-  border-radius:14px;
-  border:none;
-  font-weight:600;
-  cursor:pointer;
-  background:rgba(255,255,255,0.25);
-  color:#fff;
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.4);
-  transition:.25s ease;
-}
+  /* SEARCH — fixed top-left */
+  .search-area {
+    position: fixed;
+    top: 20px;
+    left: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 300px;
+  }
 
-.search-top button:hover{
-  background:rgba(255,255,255,0.4);
-}
-.title{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-}
+  .search-row { display: flex; gap: 8px; }
 
-.logo{
-  height:36px;
-  width:auto;
-}
+  .search-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    backdrop-filter: blur(12px);
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-dim); }
 
-.search-modes{
-  display:flex;
-  gap:8px;
-}
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent); }
 
-.mode-btn{
-  flex:1;
-  padding:6px;
-  font-size:12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.4);
-  background:rgba(255,255,255,0.15);
-  color:#fff;
-  cursor:pointer;
-  transition:.2s ease;
-}
+  .mode-row { display: flex; gap: 6px; }
 
-.mode-btn.active{
-  background:rgba(255,255,255,0.45);
-  color:#000;
-  font-weight:600;
-}
+  .mode-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .mode-btn.active {
+    background: rgba(88,166,255,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
-/* =========================
-   TI TOOL FIXED BUTTON
-   ========================= */
-.ti-tool{
-  position:fixed;
-  top:20px;
-  right:24px;
-  z-index:9999;
-  padding:10px 16px;
-  border-radius:16px;
-  background:rgba(255,255,255,0.25);
-  border:1px solid rgba(255,255,255,0.4);
-  color:#fff;
-  font-size:13px;
-  font-weight:600;
-  text-decoration:none;
-  backdrop-filter:blur(12px);
-  box-shadow:0 8px 20px rgba(0,0,0,0.35);
-  transition:.25s ease;
-}
-.ti-tool:hover{
-  background:rgba(255,255,255,0.4);
-  transform:translateY(-1px);
-}
+  /* TI TOOL — fixed top-right */
+  .ti-btn {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 9999;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    backdrop-filter: blur(12px);
+  }
+  .ti-btn:hover { background: var(--border); border-color: var(--accent3); color: var(--accent3); }
 
-/* ========================= */
+  /* MAIN CARD */
+  .card-main {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
 
-.dashboard{
-  width:560px;
-  padding:28px;
-  border-radius:24px;
-  background:var(--glass-bg);
-  backdrop-filter:blur(16px);
-  border:1px solid var(--glass-border);
-  box-shadow:0 30px 60px rgba(0,0,0,.45);
-}
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
 
-h2{text-align:center;margin:0 0 20px;font-weight:600}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-label{font-size:13px;opacity:.85;margin-bottom:6px;display:block}
-input,select{width:100%;padding:10px 12px;border-radius:12px;border:none;font-size:14px}
-.date-wrapper{position:relative;cursor:pointer}
-.date-display{background:#fff;color:#000}
-.calendar-input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.divider{height:1px;background:rgba(255,255,255,.3);margin:24px 0}
-h3{margin:0 0 14px;text-align:center;font-weight:500}
-.cards{display:grid;gap:12px}
-.card{background:var(--card-bg);border-radius:16px;padding:14px 16px;transition:.2s ease}
-.card:hover{background:var(--hover-bg)}
-.card a{color:#fff;text-decoration:none;display:flex;align-items:center;font-size:15px}
-.card a.disabled{opacity:.4;pointer-events:none;cursor:not-allowed}
-.footer{margin-top:18px;text-align:center;font-size:12px;opacity:.75}
+  .logo { height: 28px; width: auto; }
+
+  .header-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .header-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .date-wrapper { position: relative; }
+
+  .date-display {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .date-display:focus { border-color: var(--accent); }
+
+  .date-native {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237d8590' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: #161b22; }
+
+  /* TIME RANGE */
+  .time-range {
+    display: none;
+    background: rgba(88,166,255,0.05);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .time-range.visible { display: block; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* LINK ITEMS */
+  .links { display: flex; flex-direction: column; gap: 8px; }
+
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .link-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 8px 0 0 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .link-item:hover:not(.disabled) { background: #1c2128; border-color: var(--border-bright); transform: translateX(2px); }
+  .link-item:hover:not(.disabled)::before { opacity: 1; }
+
+  .link-item.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+  .link-item[data-id="triggered"]::before { background: var(--accent); }
+  .link-item[data-id="open"]::before      { background: var(--accent3); }
+  .link-item[data-id="closed"]::before    { background: var(--accent2); }
+  .link-item[data-id="onhold"]::before    { background: var(--accent4); }
+
+  .link-item:hover[data-id="triggered"] { border-color: rgba(88,166,255,0.4); }
+  .link-item:hover[data-id="open"]      { border-color: rgba(247,129,102,0.4); }
+  .link-item:hover[data-id="closed"]    { border-color: rgba(63,185,80,0.4); }
+  .link-item:hover[data-id="onhold"]    { border-color: rgba(210,153,34,0.4); }
+
+  .link-icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+  .link-text { font-size: 13px; flex: 1; }
+  .link-arrow { color: var(--text-dim); font-size: 14px; transition: transform 0.2s, color 0.2s; }
+  .link-item:hover:not(.disabled) .link-arrow { transform: translateX(3px); color: var(--text-muted); }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 18px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
 </style>
 </head>
-
 <body>
 
-<!-- SEARCH SYSTEM -->
-<div class="search-box">
-  <div class="search-top">
-    <input type="text" id="searchInput" placeholder="🔎 Search in Tines..." 
-           onkeypress="if(event.key==='Enter') searchTines()">
-    <button onclick="searchTines()">Go</button>
+<div class="wrapper">
+  <!-- Fixed top-left search -->
+  <div class="search-area">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" type="text" placeholder="🔎 Search cases..." onkeydown="if(event.key==='Enter') doSearch()">
+      <button class="btn" onclick="doSearch()">Search</button>
+    </div>
+    <div class="mode-row">
+      <button class="mode-btn active" id="btn-global"  onclick="setMode('global')">🌐 Global</button>
+      <button class="mode-btn"        id="btn-comment" onclick="setMode('comment')">💬 Comment</button>
+    </div>
   </div>
-  <div class="search-modes">
-    <button class="mode-btn active" id="globalBtn" onclick="setMode('global')">🌐 Global</button>
-    <button class="mode-btn" id="commentBtn" onclick="setMode('comment')">💬 Comment</button>
-  </div>
-</div>
 
-<a class="ti-tool" href="https://osintdb.vercel.app" target="_blank">
-  🕵️ TI Tool
-</a>
-
-<div class="dashboard">
- <h2 class="title">
-  <img src="tines-removebg-preview.png" alt="Tines Logo" class="logo" onerror="this.style.display='none'">
-  Tines Shift Dashboard
-</h2>
+  <!-- Fixed top-right TI Tool -->
+  <a class="ti-btn" href="https://osintdb.vercel.app" target="_blank">🕵️ TI Tool</a>
 
 
-  <div class="controls">
-    <div>
-      <label>📅 Date</label>
-      <div class="date-wrapper" onclick="openCalendar()">
-        <input id="dateDisplay" class="date-display" placeholder="DD-MM-YYYY" readonly>
-        <input type="date" id="date" class="calendar-input" onchange="handleDate()">
+
+  <div class="card-main">
+
+    <div class="header">
+      <img src="tines-removebg-preview.png" alt="Tines" class="logo" onerror="this.style.display='none'">
+      <span class="header-title">Tines Shift Dashboard</span>
+    </div>
+
+    <div class="controls">
+      <div class="field">
+        <label>📅 Date</label>
+        <div class="date-wrapper" onclick="triggerDatePicker()">
+          <input class="date-display" id="dateDisplay" type="text" placeholder="DD-MM-YYYY" readonly>
+          <input class="date-native"  id="dateNative"  type="date" onchange="onDateChange()">
+        </div>
+      </div>
+      <div class="field">
+        <label>⏰ Shift</label>
+        <select id="shiftSelect" onchange="onShiftChange()">
+          <option value="">— Select —</option>
+          <option value="morning">🌅 Morning</option>
+          <option value="afternoon">🌇 Afternoon</option>
+          <option value="night">🌙 Night</option>
+        </select>
       </div>
     </div>
-    <div>
-      <label>⏰ Shift</label>
-      <select id="shift" onchange="generateLinks()">
-        <option value="">Select shift</option>
-        <option value="morning">🌅 Morning</option>
-        <option value="afternoon">🌇 Afternoon</option>
-        <option value="night">🌙 Night</option>
-      </select>
+
+    <div class="time-range" id="timeRange"></div>
+
+    <div class="section-label">Shift Reporting</div>
+
+    <div class="links">
+      <a class="link-item disabled" data-id="triggered" id="link-triggered" href="#" target="_blank">
+        <span class="link-icon">1️⃣</span>
+        <span class="link-text">Total cases triggered</span>
+        <span class="link-arrow">→</span>
+      </a>
+      <a class="link-item disabled" data-id="open" id="link-open" href="#" target="_blank">
+        <span class="link-icon">🚨</span>
+        <span class="link-text">Total open cases</span>
+        <span class="link-arrow">→</span>
+      </a>
+      <a class="link-item disabled" data-id="closed" id="link-closed" href="#" target="_blank">
+        <span class="link-icon">✅</span>
+        <span class="link-text">Closed / Handled cases</span>
+        <span class="link-arrow">→</span>
+      </a>
+      <a class="link-item disabled" data-id="onhold" id="link-onhold" href="#" target="_blank">
+        <span class="link-icon">⏸</span>
+        <span class="link-text">On Hold cases</span>
+        <span class="link-arrow">→</span>
+      </a>
     </div>
-  </div>
 
-  <div class="divider"></div>
-
-  <h3>📊 Shift Reporting</h3>
-
-  <div class="cards">
-    <div class="card"><a id="triggered" class="disabled" href="#" target="_blank">1️⃣ Total cases triggered</a></div>
-    <div class="card"><a id="open" class="disabled" href="#" target="_blank">🚨 Total open cases</a></div>
-    <div class="card"><a id="closed" class="disabled" href="#" target="_blank">✅ Closed / Handled cases</a></div>
-    <div class="card"><a id="onhold" class="disabled" href="#" target="_blank">⏸ On Hold cases</a></div>
   </div>
 
   <div class="footer">⚔️ GCC SOC India</div>
+
 </div>
 
 <script>
+  var searchMode  = 'global';
+  var pickedDate  = '';   // "YYYY-MM-DD"
+  var pickedShift = '';
 
-let searchMode = "global";
-
-function setMode(mode){
-  searchMode = mode;
-  document.getElementById("globalBtn").classList.remove("active");
-  document.getElementById("commentBtn").classList.remove("active");
-  document.getElementById(mode+"Btn").classList.add("active");
-}
-
-function searchTines(){
-  const query = document.getElementById("searchInput").value.trim();
-  if(!query) return;
-
-  const encoded = encodeURIComponent(query);
-  let url;
-
-  if(searchMode==="global"){
-    url = `https://intezer-managed-soar.tines.com/teams/65868/cases?sort=CREATED_DESC&view=list&search=${encoded}&v=2`;
-  }else{
-    url = `https://intezer-managed-soar.tines.com/teams/65868/cases?sort=CREATED_DESC&view=list&filter[comment]=${encoded}&v=2`;
+  /* ── SEARCH ── */
+  function setMode(mode) {
+    searchMode = mode;
+    document.getElementById('btn-global').classList.toggle('active',  mode === 'global');
+    document.getElementById('btn-comment').classList.toggle('active', mode === 'comment');
   }
 
-  window.open(url,"_blank");
-}
-
-function openCalendar(){
-  const d=document.getElementById("date");
-  if(d.showPicker) {
-    d.showPicker();
-  } else {
-    d.focus();
-  }
-}
-
-function handleDate(){
-  const dateInput = document.getElementById("date");
-  const dateDisplay = document.getElementById("dateDisplay");
-  
-  if(!dateInput.value) return;
-  
-  const v = dateInput.value.split("-");
-  dateDisplay.value = `${v[2]}-${v[1]}-${v[0]}`;
-  
-  console.log("Date selected:", dateInput.value);
-  generateLinks();
-}
-
-function getUTC(date, shift){
-  let s, e;
-  const d = new Date(date + "T00:00:00");
-  
-  if(shift === "morning"){
-    s = `${date}T00:30:00.000Z`;
-    e = `${date}T08:30:00.000Z`;
-  }
-  else if(shift === "afternoon"){
-    s = `${date}T08:30:00.000Z`;
-    e = `${date}T16:30:00.000Z`;
-  }
-  else if(shift === "night"){
-  s = `${date}T16:30:00.000Z`;
-
-  const d = new Date(date + "T00:00:00");
-  d.setDate(d.getDate() + 1);
-  const nextDay = d.toISOString().split("T")[0];
-
-  // End time should be 00:30 of next day
-  e = `${nextDay}T00:30:00.000Z`;
-}
-
-  
-  console.log("Time range:", s, "to", e);
-  return {s, e};
-}
-
-function enable(id, url){
-  const a = document.getElementById(id);
-  a.href = url;
-  a.classList.remove("disabled");
-  console.log(`Enabled ${id}:`, url);
-}
-
-function generateLinks(){
-  const dateInput = document.getElementById("date");
-  const shiftSelect = document.getElementById("shift");
-  
-  console.log("Generate called - Date:", dateInput.value, "Shift:", shiftSelect.value);
-  
-  if(!dateInput.value || !shiftSelect.value) {
-    console.log("Missing date or shift");
-    return;
+  function doSearch() {
+    var q = document.getElementById('searchInput').value.trim();
+    if (!q) return;
+    var enc  = encodeURIComponent(q);
+    var base = 'https://intezer-managed-soar.tines.com/teams/65868/cases?sort=CREATED_DESC&view=list&v=2';
+    var url  = (searchMode === 'global') ? base + '&search=' + enc : base + '&filter[comment]=' + enc;
+    window.open(url, '_blank');
   }
 
-  const {s, e} = getUTC(dateInput.value, shiftSelect.value);
-  const base = "https://intezer-managed-soar.tines.com/teams/65868/cases";
-  
-  const common = {
-    sort: "RECENTLY_EDITED",
-    view: "list",
-    "filter[date][start]": s,
-    "filter[date][end]": e,
-    "filter[child_team_ids]": "[72143,72144]",
-    v: "2"
-  };
+  /* ── DATE ── */
+  function triggerDatePicker() {
+    var el = document.getElementById('dateNative');
+    try { el.showPicker(); } catch(e) { el.focus(); }
+  }
 
-  // Total cases triggered (all cases in time range)
-  const triggeredUrl = `${base}?${new URLSearchParams(common).toString()}`;
-  enable("triggered", triggeredUrl);
+  function onDateChange() {
+    var raw = document.getElementById('dateNative').value;  // "YYYY-MM-DD"
+    if (!raw) return;
+    pickedDate = raw;
+    var p = raw.split('-');
+    document.getElementById('dateDisplay').value = p[2] + '-' + p[1] + '-' + p[0];
+    tryGenerate();
+  }
 
-  // Total open cases (status = OPEN with specific substatuses)
-  const openParams = {
-    ...common,
-    "filter[status]": "OPEN",
-    "filter[subStatus]": "escalated,in_progress,on_hold"
-  };
-  const openUrl = `${base}?${new URLSearchParams(openParams).toString()}`;
-  enable("open", openUrl);
+  /* ── SHIFT ── */
+  function onShiftChange() {
+    pickedShift = document.getElementById('shiftSelect').value;
+    tryGenerate();
+  }
 
-  // Closed / Handled cases (status = CLOSED with all closure substatuses)
-  const closedParams = {
-    ...common,
-    "filter[status]": "CLOSED",
-    "filter[subStatus]": "done,canceled,automatically_closed,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate"
-  };
-  const closedUrl = `${base}?${new URLSearchParams(closedParams).toString()}`;
-  enable("closed", closedUrl);
+  /* ── TIME CALCULATOR ──
+     All times stored/sent as UTC (ending in Z).
+     Morning:   00:30Z → 08:30Z  (same date)
+     Afternoon: 08:30Z → 16:30Z  (same date)
+     Night:     16:30Z (selected date) → 00:30Z (next date)
+  */
+  function buildUTCString(yyyy, mm, dd, hh, min) {
+    function pad(n) { return String(n).padStart(2, '0'); }
+    return yyyy + '-' + pad(mm) + '-' + pad(dd) + 'T' + pad(hh) + ':' + pad(min) + ':00.000Z';
+  }
 
-  // On Hold cases (substatus = on_hold only)
-  const onholdParams = {
-    ...common,
-    "filter[subStatus]": "on_hold"
-  };
-  const onholdUrl = `${base}?${new URLSearchParams(onholdParams).toString()}`;
-  enable("onhold", onholdUrl);
-  
-  console.log("All links generated successfully");
-}
+  function getShiftTimes(dateStr, shift) {
+    // Parse date parts as integers — avoids ALL timezone issues
+    var y = parseInt(dateStr.slice(0, 4), 10);
+    var m = parseInt(dateStr.slice(5, 7), 10);   // 1-12
+    var d = parseInt(dateStr.slice(8, 10), 10);
+
+    // Calculate next calendar day
+    var nextDate = new Date(Date.UTC(y, m - 1, d + 1)); // month is 0-indexed for Date.UTC
+    var ny = nextDate.getUTCFullYear();
+    var nm = nextDate.getUTCMonth() + 1;
+    var nd = nextDate.getUTCDate();
+
+    if (shift === 'morning') {
+      return {
+        start: buildUTCString(y, m, d,  0, 30),
+        end:   buildUTCString(y, m, d,  8, 30)
+      };
+    }
+    if (shift === 'afternoon') {
+      return {
+        start: buildUTCString(y, m, d,  8, 30),
+        end:   buildUTCString(y, m, d, 16, 30)
+      };
+    }
+    if (shift === 'night') {
+      return {
+        start: buildUTCString(y,  m,  d,  16, 30),
+        end:   buildUTCString(ny, nm, nd,  0, 30)   // next day 00:30Z
+      };
+    }
+    return null;
+  }
+
+  /* ── GENERATE LINKS ── */
+  function tryGenerate() {
+    if (!pickedDate || !pickedShift) return;
+
+    var times = getShiftTimes(pickedDate, pickedShift);
+    if (!times) return;
+
+    // Show range for verification
+    var tr = document.getElementById('timeRange');
+    tr.textContent = '⏱  ' + times.start + '  →  ' + times.end;
+    tr.classList.add('visible');
+
+    var BASE = 'https://intezer-managed-soar.tines.com/teams/65868/cases';
+
+    var common = {
+      'sort':                    'RECENTLY_EDITED',
+      'view':                    'list',
+      'filter[date][start]':     times.start,
+      'filter[date][end]':       times.end,
+      'filter[child_team_ids]':  '[72143,72144]',
+      'v':                       '2'
+    };
+
+    // 1. All triggered
+    activateLink('triggered', BASE + '?' + toQuery(common));
+
+    // 2. Open
+    var openP = Object.assign({}, common, {
+      'filter[status]':    'OPEN',
+      'filter[subStatus]': 'escalated,in_progress,on_hold'
+    });
+    activateLink('open', BASE + '?' + toQuery(openP));
+
+    // 3. Closed
+    var closedP = Object.assign({}, common, {
+      'filter[status]':    'CLOSED',
+      'filter[subStatus]': 'done,canceled,automatically_closed,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate'
+    });
+    activateLink('closed', BASE + '?' + toQuery(closedP));
+
+    // 4. On Hold
+    var holdP = Object.assign({}, common, {
+      'filter[subStatus]': 'on_hold'
+    });
+    activateLink('onhold', BASE + '?' + toQuery(holdP));
+  }
+
+  function toQuery(obj) {
+    return Object.keys(obj)
+      .map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k]); })
+      .join('&');
+  }
+
+  function activateLink(id, url) {
+    var el = document.getElementById('link-' + id);
+    el.href = url;
+    el.classList.remove('disabled');
+  }
 </script>
 
 </body>
 </html>
-
