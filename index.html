@@ -155,6 +155,26 @@
   }
   .ti-btn:hover { background: var(--border); border-color: var(--accent3); color: var(--accent3); }
 
+  /* NAV BUTTON — stacked below TI btn */
+  .nav-btn {
+    position: fixed;
+    top: 60px;
+    right: 24px;
+    z-index: 9999;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    backdrop-filter: blur(12px);
+  }
+  .nav-btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent); }
+
   /* MAIN CARD */
   .card-main {
     background: var(--surface);
@@ -368,7 +388,8 @@
   <!-- Fixed top-right TI Tool -->
   <a class="ti-btn" href="https://osintdb.vercel.app" target="_blank">🕵️ TI Tool</a>
 
-
+  <!-- Nav to Analyst Lookup -->
+  <a class="nav-btn" href="/analyst/">👥 Analyst Lookup</a>
 
   <div class="card-main">
 
@@ -483,13 +504,11 @@
   }
 
   function getShiftTimes(dateStr, shift) {
-    // Parse date parts as integers — avoids ALL timezone issues
     var y = parseInt(dateStr.slice(0, 4), 10);
-    var m = parseInt(dateStr.slice(5, 7), 10);   // 1-12
+    var m = parseInt(dateStr.slice(5, 7), 10);
     var d = parseInt(dateStr.slice(8, 10), 10);
 
-    // Calculate next calendar day
-    var nextDate = new Date(Date.UTC(y, m - 1, d + 1)); // month is 0-indexed for Date.UTC
+    var nextDate = new Date(Date.UTC(y, m - 1, d + 1));
     var ny = nextDate.getUTCFullYear();
     var nm = nextDate.getUTCMonth() + 1;
     var nd = nextDate.getUTCDate();
@@ -509,7 +528,7 @@
     if (shift === 'night') {
       return {
         start: buildUTCString(y,  m,  d,  16, 30),
-        end:   buildUTCString(ny, nm, nd,  0, 30)   // next day 00:30Z
+        end:   buildUTCString(ny, nm, nd,  0, 30)
       };
     }
     return null;
@@ -548,11 +567,15 @@
     });
     activateLink('open', BASE + '?' + toQuery(openP));
 
-    // 3. Closed
-    var closedP = Object.assign({}, common, {
-      'filter[status]':    'CLOSED',
-      'filter[subStatus]': 'done,canceled,automatically_closed,true_positive,benign_positive_suspicious_expected,false_positive,false_negative_missed_detection,duplicate'
-    });
+    // 3. Closed — uses filter[resolved] instead of filter[date]
+    var closedP = {
+      'sort':                      'RECENTLY_EDITED',
+      'view':                      'list',
+      'filter[child_team_ids]':    '[72143,72144]',
+      'filter[resolved][start]':   times.start,
+      'filter[resolved][end]':     times.end,
+      'v':                         '2'
+    };
     activateLink('closed', BASE + '?' + toQuery(closedP));
 
     // 4. On Hold
