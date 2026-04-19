@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Analyst Case Lookup</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080c10;
+    --panel:     #0d1219;
+    --panel2:    #111820;
+    --rim:       #1a2332;
+    --rim2:      #243040;
+    --teal:      #00d4aa;
+    --teal-dim:  rgba(0,212,170,0.12);
+    --teal-glow: rgba(0,212,170,0.06);
+    --amber:     #f0a500;
+    --red:       #ff4d6d;
+    --blue:      #4da8ff;
+    --green:     #39d98a;
+    --text:      #d4e0ed;
+    --muted:     #5a7080;
+    --dim:       #2d3d4d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding: 24px 20px 40px;
+    overflow-x: hidden;
+  }
+
+  /* subtle scanline overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+
+  /* ─── HEADER ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 20px;
+    border-bottom: 1px solid var(--rim);
+    margin-bottom: 28px;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .shield {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--teal-dim), transparent);
+    border: 1px solid var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 16px var(--teal-glow);
+  }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+  .header-title span { color: var(--teal); }
+  .header-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .ti-link {
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--rim2);
+    padding: 7px 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    background: var(--panel);
+  }
+  .ti-link:hover { color: var(--red); border-color: var(--red); }
+
+  /* ─── GRID LAYOUT ─── */
+  .grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* ─── PANELS ─── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rim);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--teal);
+    font-weight: 600;
+  }
+  .panel-count {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .panel-body { padding: 12px; }
+
+  /* ─── ANALYSTS ─── */
+  .analyst-list { display: flex; flex-direction: column; gap: 4px; max-height: 480px; overflow-y: auto; }
+  .analyst-list::-webkit-scrollbar { width: 4px; }
+  .analyst-list::-webkit-scrollbar-track { background: var(--bg); }
+  .analyst-list::-webkit-scrollbar-thumb { background: var(--rim2); border-radius: 2px; }
+
+  .analyst-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .analyst-row:hover { background: var(--panel2); border-color: var(--rim2); }
+  .analyst-row.checked { background: var(--teal-dim); border-color: rgba(0,212,170,0.3); }
+
+  .cb {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--muted);
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 10px;
+  }
+  .analyst-row.checked .cb {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #000;
+  }
+
+  .analyst-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--panel2);
+    border: 1px solid var(--rim2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--teal);
+    flex-shrink: 0;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .analyst-name { font-size: 12px; flex: 1; }
+
+  .select-all-row {
+    display: flex; gap: 8px; padding: 0 0 10px;
+  }
+  .pill-btn {
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--rim2);
+    background: var(--panel2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .pill-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* ─── RIGHT COLUMN ─── */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ─── DATE TIME RANGE ─── */
+  .datetime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .dt-block { display: flex; flex-direction: column; gap: 6px; }
+  .dt-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .dt-row { display: flex; gap: 6px; }
+  .dt-input {
+    flex: 1;
+    background: var(--panel2);
+    border: 1px solid var(--rim);
+    color: var(--text);
+    padding: 9px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .dt-input:focus { border-color: var(--teal); }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+  }
+
+  /* ─── QUICK DATE PRESETS ─── */
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .preset-btn {
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--rim2);
+    background: var(--panel2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  .preset-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+  /* ─── SHIFT PRESETS ─── */
+  .shift-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .shift-btn {
+    padding: 10px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--rim2);
+    background: var(--panel2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+  }
+  .shift-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(77,168,255,0.08); }
+  .shift-btn .shift-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+  .shift-btn .shift-name { display: block; font-weight: 600; }
+  .shift-btn .shift-time { font-size: 9px; color: var(--muted); margin-top: 2px; display: block; letter-spacing: 0.5px; }
+
+  /* ─── CASE TYPE FILTERS ─── */
+  .type-grid { display: flex; flex-direction: column; gap: 6px; }
+  .type-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--rim);
+    background: var(--panel2);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .type-row:hover { border-color: var(--rim2); }
+  .type-row.active-created  { border-color: rgba(77,168,255,0.5); background: rgba(77,168,255,0.07); }
+  .type-row.active-resolved { border-color: rgba(57,217,138,0.5); background: rgba(57,217,138,0.07); }
+  .type-row.active-open     { border-color: rgba(255,77,109,0.5); background: rgba(255,77,109,0.07); }
+
+  .type-cb {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--muted);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .type-row.active-created  .type-cb { background: var(--blue);  border-color: var(--blue);  color: #000; }
+  .type-row.active-resolved .type-cb { background: var(--green); border-color: var(--green); color: #000; }
+  .type-row.active-open     .type-cb { background: var(--red);   border-color: var(--red);   color: #fff; }
+
+  .type-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .type-dot.created  { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+  .type-dot.resolved { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .type-dot.open     { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+  .type-info { flex: 1; }
+  .type-name { font-size: 12px; font-weight: 600; }
+  .type-desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ─── UTC PREVIEW ─── */
+  .utc-bar {
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--panel2);
+    border: 1px solid var(--rim);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: none;
+    letter-spacing: 0.3px;
+  }
+  .utc-bar.visible { display: block; }
+  .utc-bar span { color: var(--teal); }
+
+  /* ─── GENERATE BUTTON ─── */
+  .gen-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(0,212,170,0.15), rgba(0,212,170,0.05));
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0,212,170,0.08);
+  }
+  .gen-btn:hover {
+    background: linear-gradient(135deg, rgba(0,212,170,0.25), rgba(0,212,170,0.1));
+    box-shadow: 0 0 30px rgba(0,212,170,0.2);
+    transform: translateY(-1px);
+  }
+  .gen-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ─── RESULTS ─── */
+  .results { display: flex; flex-direction: column; gap: 8px; }
+
+  .result-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    background: var(--panel);
+    border: 1px solid var(--rim);
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-link::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 8px 0 0 8px;
+  }
+  .result-link.r-created::before  { background: var(--blue); }
+  .result-link.r-resolved::before { background: var(--green); }
+  .result-link.r-open::before     { background: var(--red); }
+
+  .result-link:hover { background: var(--panel2); transform: translateX(3px); }
+  .result-link:hover.r-created  { border-color: rgba(77,168,255,0.4); }
+  .result-link:hover.r-resolved { border-color: rgba(57,217,138,0.4); }
+  .result-link:hover.r-open     { border-color: rgba(255,77,109,0.4); }
+
+  .result-icon { font-size: 16px; width: 22px; text-align: center; }
+  .result-body { flex: 1; }
+  .result-title { font-size: 12px; font-weight: 600; }
+  .result-meta  { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .result-arrow { color: var(--dim); font-size: 14px; transition: transform 0.2s; }
+  .result-link:hover .result-arrow { transform: translateX(4px); color: var(--muted); }
+
+  .no-results {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── VALIDATION ─── */
+  .warn {
+    font-size: 10px;
+    color: var(--amber);
+    padding: 6px 10px;
+    background: rgba(240,165,0,0.08);
+    border: 1px solid rgba(240,165,0,0.3);
+    border-radius: 5px;
+    display: none;
+  }
+  .warn.visible { display: block; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 680px) {
+    .grid { grid-template-columns: 1fr; }
+    .datetime-grid { grid-template-columns: 1fr; }
+    .shift-grid { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="shield">🛡️</div>
+      <div>
+        <div class="header-title">SOC <span>Case Lookup</span></div>
+        <div class="header-sub">GCC SOC India · Tines</div>
+      </div>
+    </div>
+    <a class="ti-link" href="https://osintdb.vercel.app" target="_blank">🕵️ TI Tool</a>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: ANALYST PICKER -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-label">Analysts</span>
+        <span class="panel-count" id="analystCount">0 selected</span>
+      </div>
+      <div class="panel-body">
+        <div class="select-all-row">
+          <button class="pill-btn" onclick="selectAll()">Select All</button>
+          <button class="pill-btn" onclick="clearAll()">Clear</button>
+        </div>
+        <div class="analyst-list" id="analystList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <!-- DATE & TIME RANGE -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-label">Date &amp; Time Range (IST)</span>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+
+          <!-- Shift Presets -->
+          <div>
+            <div class="dt-label" style="margin-bottom:8px;">Quick Shift Presets</div>
+            <div class="shift-grid">
+              <button class="shift-btn" onclick="applyShift('morning')">
+                <span class="shift-icon">🌅</span>
+                <span class="shift-name">Morning</span>
+                <span class="shift-time">06:00 – 14:00</span>
+              </button>
+              <button class="shift-btn" onclick="applyShift('afternoon')">
+                <span class="shift-icon">🌇</span>
+                <span class="shift-name">Afternoon</span>
+                <span class="shift-time">14:00 – 22:00</span>
+              </button>
+              <button class="shift-btn" onclick="applyShift('night')">
+                <span class="shift-icon">🌙</span>
+                <span class="shift-name">Night</span>
+                <span class="shift-time">22:00 – 06:00</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom date range -->
+          <div class="datetime-grid">
+            <div class="dt-block">
+              <div class="dt-label">From Date</div>
+              <input class="dt-input" type="date" id="startDate" onchange="onRangeChange()">
+            </div>
+            <div class="dt-block">
+              <div class="dt-label">From Time (IST)</div>
+              <input class="dt-input" type="time" id="startTime" value="00:00" onchange="onRangeChange()">
+            </div>
+            <div class="dt-block">
+              <div class="dt-label">To Date</div>
+              <input class="dt-input" type="date" id="endDate" onchange="onRangeChange()">
+            </div>
+            <div class="dt-block">
+              <div class="dt-label">To Time (IST)</div>
+              <input class="dt-input" type="time" id="endTime" value="23:59" onchange="onRangeChange()">
+            </div>
+          </div>
+
+          <!-- Quick date presets -->
+          <div>
+            <div class="dt-label" style="margin-bottom:6px;">Quick Date</div>
+            <div class="presets">
+              <button class="preset-btn" onclick="setToday()">Today</button>
+              <button class="preset-btn" onclick="setYesterday()">Yesterday</button>
+              <button class="preset-btn" onclick="setLast7()">Last 7 days</button>
+              <button class="preset-btn" onclick="setThisMonth()">This month</button>
+            </div>
+          </div>
+
+          <!-- UTC preview -->
+          <div class="utc-bar" id="utcBar"></div>
+        </div>
+      </div>
+
+      <!-- CASE TYPE FILTERS -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-label">Case Filter Type</span>
+          <span class="panel-count" style="font-size:9px;">select one or more</span>
+        </div>
+        <div class="panel-body">
+          <div class="type-grid">
+            <div class="type-row" id="type-created" onclick="toggleType('created')">
+              <div class="type-cb" id="tcb-created"></div>
+              <div class="type-dot created"></div>
+              <div class="type-info">
+                <div class="type-name">Created</div>
+                <div class="type-desc">Cases created within the date range</div>
+              </div>
+            </div>
+            <div class="type-row" id="type-resolved" onclick="toggleType('resolved')">
+              <div class="type-cb" id="tcb-resolved"></div>
+              <div class="type-dot resolved"></div>
+              <div class="type-info">
+                <div class="type-name">Resolved / Closed</div>
+                <div class="type-desc">Cases resolved within the date range</div>
+              </div>
+            </div>
+            <div class="type-row" id="type-open" onclick="toggleType('open')">
+              <div class="type-cb" id="tcb-open"></div>
+              <div class="type-dot open"></div>
+              <div class="type-info">
+                <div class="type-name">Open</div>
+                <div class="type-desc">Escalated · In Progress · On Hold</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VALIDATE + GENERATE -->
+      <div class="warn" id="warnBox"></div>
+      <button class="gen-btn" id="genBtn" onclick="generate()">⚡ Generate Links</button>
+
+      <!-- RESULTS -->
+      <div class="panel" id="resultsPanel" style="display:none;">
+        <div class="panel-head">
+          <span class="panel-label">Results</span>
+          <span class="panel-count" id="resultCount"></span>
+        </div>
+        <div class="panel-body">
+          <div class="results" id="resultsList"></div>
+        </div>
+      </div>
+
+    </div><!-- /right-col -->
+  </div><!-- /grid -->
+
+  <div class="footer">⚔️ GCC SOC India</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   ANALYST DATA
+   Format: { name, id }
+   IDs sourced directly from provided URLs.
+   Where multiple names shared the same URL
+   (placeholder IDs), marked with * — update
+   the id field once the correct one is known.
+═══════════════════════════════════════════ */
+var ANALYSTS = [
+  { name: 'Ajith KR',           id: '65258' },
+  { name: 'Ankit Gupta',        id: '63018' },
+  { name: 'Anup Mishra',        id: '63019' },
+  { name: 'Darshith S',         id: '63019' },
+  { name: 'Durga Suneha C H',   id: '72542' },
+  { name: 'Karthik',            id: '70194' },
+  { name: 'Mukthiar Ahamed',    id: '70194' },
+  { name: 'Pallavi Hagaldivte', id: '70194' },
+  { name: 'Pragathi S',         id: '70194' },
+  { name: 'Pranay Siddartha',   id: '63017' },
+  { name: 'Punith NN',          id: '70194' },
+  { name: 'Pythireddi Vamsi',   id: '70194' },
+  { name: 'Rakshith S',         id: '70194' },
+  { name: 'Reyan',              id: '70194' },
+  { name: 'Saddam Hussain',     id: '70194' },
+  { name: 'Sagar Manuja',       id: '70194' },
+  { name: 'Sai Vardhan',        id: '70194' },
+  { name: 'Sanjay S V',         id: '70194' },
+  { name: 'Shivakumar C N',     id: '70194' },
+  { name: 'Siddarth Gowda H M', id: '70194' },
+];
+
+var selectedAnalysts = {};
+var selectedTypes    = {};
+
+/* ── BUILD ANALYST LIST ── */
+(function buildList() {
+  var container = document.getElementById('analystList');
+  ANALYSTS.forEach(function(a, i) {
+    var row = document.createElement('div');
+    row.className = 'analyst-row';
+    row.id = 'ar-' + i;
+    row.onclick = function() { toggleAnalyst(i); };
+
+    var initials = a.name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('');
+
+    row.innerHTML =
+      '<div class="cb" id="cb-' + i + '"></div>' +
+      '<div class="analyst-avatar">' + initials + '</div>' +
+      '<div class="analyst-name">' + a.name + '</div>';
+
+    container.appendChild(row);
+  });
+  updateAnalystCount();
+})();
+
+function toggleAnalyst(i) {
+  selectedAnalysts[i] = !selectedAnalysts[i];
+  var row = document.getElementById('ar-' + i);
+  var cb  = document.getElementById('cb-' + i);
+  if (selectedAnalysts[i]) {
+    row.classList.add('checked');
+    cb.textContent = '✓';
+  } else {
+    row.classList.remove('checked');
+    cb.textContent = '';
+  }
+  updateAnalystCount();
+}
+
+function selectAll() {
+  ANALYSTS.forEach(function(_, i) {
+    selectedAnalysts[i] = true;
+    document.getElementById('ar-' + i).classList.add('checked');
+    document.getElementById('cb-' + i).textContent = '✓';
+  });
+  updateAnalystCount();
+}
+
+function clearAll() {
+  ANALYSTS.forEach(function(_, i) {
+    selectedAnalysts[i] = false;
+    document.getElementById('ar-' + i).classList.remove('checked');
+    document.getElementById('cb-' + i).textContent = '';
+  });
+  updateAnalystCount();
+}
+
+function updateAnalystCount() {
+  var n = Object.values(selectedAnalysts).filter(Boolean).length;
+  document.getElementById('analystCount').textContent = n + ' selected';
+}
+
+/* ── TYPE TOGGLES ── */
+function toggleType(t) {
+  selectedTypes[t] = !selectedTypes[t];
+  var row = document.getElementById('type-' + t);
+  var cb  = document.getElementById('tcb-' + t);
+  if (selectedTypes[t]) {
+    row.classList.add('active-' + t);
+    cb.textContent = '✓';
+  } else {
+    row.classList.remove('active-' + t);
+    cb.textContent = '';
+  }
+}
+
+/* ── DATE UTILS ── */
+// IST is UTC+5:30. Convert IST datetime → UTC ISO string
+function istToUTC(dateStr, timeStr) {
+  // dateStr: "YYYY-MM-DD", timeStr: "HH:MM"
+  var y  = parseInt(dateStr.slice(0,4),10);
+  var mo = parseInt(dateStr.slice(5,7),10) - 1;
+  var d  = parseInt(dateStr.slice(8,10),10);
+  var h  = parseInt(timeStr.slice(0,2),10);
+  var mi = parseInt(timeStr.slice(3,5),10);
+
+  // Subtract IST offset (5h30m) to get UTC
+  var utcMs = Date.UTC(y, mo, d, h, mi, 0, 0) - (5*60+30)*60*1000;
+  var dt = new Date(utcMs);
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  return dt.getUTCFullYear() + '-' +
+         pad(dt.getUTCMonth()+1) + '-' +
+         pad(dt.getUTCDate()) + 'T' +
+         pad(dt.getUTCHours()) + ':' +
+         pad(dt.getUTCMinutes()) + ':' +
+         '00.000Z';
+}
+
+function today() {
+  var now = new Date();
+  // Compute today in IST
+  var ist = new Date(now.getTime() + (5*60+30)*60*1000);
+  var y  = ist.getUTCFullYear();
+  var mo = String(ist.getUTCMonth()+1).padStart(2,'0');
+  var d  = String(ist.getUTCDate()).padStart(2,'0');
+  return y + '-' + mo + '-' + d;
+}
+
+function addDays(dateStr, n) {
+  var parts = dateStr.split('-');
+  var dt = new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  var y  = dt.getUTCFullYear();
+  var mo = String(dt.getUTCMonth()+1).padStart(2,'0');
+  var d  = String(dt.getUTCDate()).padStart(2,'0');
+  return y + '-' + mo + '-' + d;
+}
+
+function setToday() {
+  var t = today();
+  document.getElementById('startDate').value = t;
+  document.getElementById('endDate').value   = t;
+  document.getElementById('startTime').value = '00:00';
+  document.getElementById('endTime').value   = '23:59';
+  onRangeChange();
+}
+
+function setYesterday() {
+  var t = addDays(today(), -1);
+  document.getElementById('startDate').value = t;
+  document.getElementById('endDate').value   = t;
+  document.getElementById('startTime').value = '00:00';
+  document.getElementById('endTime').value   = '23:59';
+  onRangeChange();
+}
+
+function setLast7() {
+  var t = today();
+  document.getElementById('startDate').value = addDays(t, -6);
+  document.getElementById('endDate').value   = t;
+  document.getElementById('startTime').value = '00:00';
+  document.getElementById('endTime').value   = '23:59';
+  onRangeChange();
+}
+
+function setThisMonth() {
+  var t = today();
+  document.getElementById('startDate').value = t.slice(0,8) + '01';
+  document.getElementById('endDate').value   = t;
+  document.getElementById('startTime').value = '00:00';
+  document.getElementById('endTime').value   = '23:59';
+  onRangeChange();
+}
+
+/* Shift presets — IST shift times */
+var SHIFTS = {
+  morning:   { startTime: '06:00', endTime: '14:00', crossDay: false },
+  afternoon: { startTime: '14:00', endTime: '22:00', crossDay: false },
+  night:     { startTime: '22:00', endTime: '06:00', crossDay: true  }
+};
+
+function applyShift(shift) {
+  var t = today();
+  var s = SHIFTS[shift];
+  document.getElementById('startDate').value = t;
+  document.getElementById('startTime').value = s.startTime;
+  document.getElementById('endDate').value   = s.crossDay ? addDays(t,1) : t;
+  document.getElementById('endTime').value   = s.endTime;
+  onRangeChange();
+}
+
+function onRangeChange() {
+  var sd = document.getElementById('startDate').value;
+  var st = document.getElementById('startTime').value;
+  var ed = document.getElementById('endDate').value;
+  var et = document.getElementById('endTime').value;
+
+  var bar = document.getElementById('utcBar');
+  if (sd && st && ed && et) {
+    var utcStart = istToUTC(sd, st);
+    var utcEnd   = istToUTC(ed, et);
+    bar.innerHTML = 'UTC: <span>' + utcStart + '</span> → <span>' + utcEnd + '</span>';
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+/* ── BUILD URL ── */
+function toQuery(obj) {
+  return Object.keys(obj)
+    .map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k]); })
+    .join('&');
+}
+
+function generate() {
+  var warn = document.getElementById('warnBox');
+  warn.classList.remove('visible');
+
+  // Validate analysts
+  var ids = [];
+  ANALYSTS.forEach(function(a, i) {
+    if (selectedAnalysts[i]) ids.push(a.id);
+  });
+  // Deduplicate
+  var uniqueIds = ids.filter(function(v,i,a){ return a.indexOf(v)===i; });
+
+  if (uniqueIds.length === 0) {
+    warn.textContent = '⚠ Select at least one analyst.';
+    warn.classList.add('visible');
+    return;
+  }
+
+  var sd = document.getElementById('startDate').value;
+  var st = document.getElementById('startTime').value;
+  var ed = document.getElementById('endDate').value;
+  var et = document.getElementById('endTime').value;
+
+  if (!sd || !ed) {
+    warn.textContent = '⚠ Select a date range.';
+    warn.classList.add('visible');
+    return;
+  }
+
+  var types = Object.keys(selectedTypes).filter(function(t){ return selectedTypes[t]; });
+  if (types.length === 0) {
+    warn.textContent = '⚠ Select at least one filter type (Created / Resolved / Open).';
+    warn.classList.add('visible');
+    return;
+  }
+
+  var utcStart = istToUTC(sd, st || '00:00');
+  var utcEnd   = istToUTC(ed, et || '23:59');
+
+  var BASE      = 'https://intezer-managed-soar.tines.com/teams/65868/cases';
+  var assignees = '[' + uniqueIds.join(',') + ']';
+
+  // Build analyst display name
+  var names = [];
+  ANALYSTS.forEach(function(a, i) { if (selectedAnalysts[i]) names.push(a.name); });
+  var nameStr = names.length <= 3
+    ? names.join(', ')
+    : names.slice(0,2).join(', ') + ' +' + (names.length-2) + ' more';
+
+  var results = [];
+
+  types.forEach(function(type) {
+    var params = {
+      'sort':                   'RECENTLY_EDITED',
+      'view':                   'list',
+      'filter[assignees]':      assignees,
+      'filter[child_team_ids]': '[72143,72144]',
+      'v':                      '2'
+    };
+
+    if (type === 'created') {
+      params['filter[date][start]'] = utcStart;
+      params['filter[date][end]']   = utcEnd;
+      results.push({
+        type:  'created',
+        icon:  '🗓️',
+        title: 'Created Cases',
+        meta:  nameStr,
+        url:   BASE + '?' + toQuery(params)
+      });
+    }
+
+    if (type === 'resolved') {
+      params['filter[resolved][start]'] = utcStart;
+      params['filter[resolved][end]']   = utcEnd;
+      results.push({
+        type:  'resolved',
+        icon:  '✅',
+        title: 'Resolved / Closed Cases',
+        meta:  nameStr,
+        url:   BASE + '?' + toQuery(params)
+      });
+    }
+
+    if (type === 'open') {
+      params['filter[date][start]']  = utcStart;
+      params['filter[date][end]']    = utcEnd;
+      params['filter[status]']       = 'OPEN';
+      params['filter[subStatus]']    = 'escalated,in_progress,on_hold';
+      results.push({
+        type:  'open',
+        icon:  '🚨',
+        title: 'Open Cases',
+        meta:  nameStr,
+        url:   BASE + '?' + toQuery(params)
+      });
+    }
+  });
+
+  renderResults(results);
+}
+
+function renderResults(results) {
+  var panel = document.getElementById('resultsPanel');
+  var list  = document.getElementById('resultsList');
+  var count = document.getElementById('resultCount');
+
+  list.innerHTML = '';
+  count.textContent = results.length + ' link' + (results.length !== 1 ? 's' : '');
+
+  results.forEach(function(r) {
+    var a = document.createElement('a');
+    a.className = 'result-link r-' + r.type;
+    a.href   = r.url;
+    a.target = '_blank';
+    a.innerHTML =
+      '<span class="result-icon">' + r.icon + '</span>' +
+      '<div class="result-body">' +
+        '<div class="result-title">' + r.title + '</div>' +
+        '<div class="result-meta">' + r.meta + '</div>' +
+      '</div>' +
+      '<span class="result-arrow">→</span>';
+    list.appendChild(a);
+  });
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>
