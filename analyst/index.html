@@ -616,31 +616,28 @@
    ANALYST DATA
    Format: { name, id }
    IDs sourced directly from provided URLs.
-   Where multiple names shared the same URL
-   (placeholder IDs), marked with * — update
-   the id field once the correct one is known.
 ═══════════════════════════════════════════ */
 var ANALYSTS = [
   { name: 'Ajith KR',           id: '65258' },
   { name: 'Ankit Gupta',        id: '63018' },
   { name: 'Anup Mishra',        id: '63019' },
-  { name: 'Darshith S',         id: '63019' },
-  { name: 'Durga Suneha C H',   id: '72542' },
-  { name: 'Karthik',            id: '70194' },
-  { name: 'Mukthiar Ahamed',    id: '70194' },
-  { name: 'Pallavi Hagaldivte', id: '70194' },
-  { name: 'Pragathi S',         id: '70194' },
+  { name: 'Darshith S',         id: '71683' },
+  { name: 'Durga Suneha C H',   id: '71683' },
+  { name: 'Karthik',            id: '71683' },
+  { name: 'Mukthiar Ahamed',    id: '71683' },
+  { name: 'Pallavi Hagaldivte', id: '71683' },
+  { name: 'Pragathi S',         id: '71683' },
   { name: 'Pranay Siddartha',   id: '63017' },
-  { name: 'Punith NN',          id: '70194' },
-  { name: 'Pythireddi Vamsi',   id: '70194' },
-  { name: 'Rakshith S',         id: '70194' },
-  { name: 'Reyan',              id: '70194' },
-  { name: 'Saddam Hussain',     id: '70194' },
-  { name: 'Sagar Manuja',       id: '70194' },
-  { name: 'Sai Vardhan',        id: '70194' },
-  { name: 'Sanjay S V',         id: '70194' },
-  { name: 'Shivakumar C N',     id: '70194' },
-  { name: 'Siddarth Gowda H M', id: '70194' },
+  { name: 'Punith NN',          id: '71683' },
+  { name: 'Pythireddi Vamsi',   id: '71683' },
+  { name: 'Rakshith S',         id: '71683' },
+  { name: 'Reyan',              id: '71683' },
+  { name: 'Saddam Hussain',     id: '71683' },
+  { name: 'Sagar Manuja',       id: '71683' },
+  { name: 'Sai Vardhan',        id: '71683' },
+  { name: 'Sanjay S V',         id: '71683' },
+  { name: 'Shivakumar C N',     id: '71683' },
+  { name: 'Siddarth Gowda H M', id: '71683' },
 ];
 
 var selectedAnalysts = {};
@@ -842,19 +839,24 @@ function generate() {
   var warn = document.getElementById('warnBox');
   warn.classList.remove('visible');
 
-  // Validate analysts
+  // Get all analyst IDs (if none selected, use all)
   var ids = [];
-  ANALYSTS.forEach(function(a, i) {
-    if (selectedAnalysts[i]) ids.push(a.id);
-  });
+  var selectedCount = Object.values(selectedAnalysts).filter(Boolean).length;
+  
+  if (selectedCount === 0) {
+    // No analysts selected - use ALL analysts
+    ANALYSTS.forEach(function(a) {
+      ids.push(a.id);
+    });
+  } else {
+    // Use only selected analysts
+    ANALYSTS.forEach(function(a, i) {
+      if (selectedAnalysts[i]) ids.push(a.id);
+    });
+  }
+  
   // Deduplicate
   var uniqueIds = ids.filter(function(v,i,a){ return a.indexOf(v)===i; });
-
-  if (uniqueIds.length === 0) {
-    warn.textContent = '⚠ Select at least one analyst.';
-    warn.classList.add('visible');
-    return;
-  }
 
   var sd = document.getElementById('startDate').value;
   var st = document.getElementById('startTime').value;
@@ -882,10 +884,18 @@ function generate() {
 
   // Build analyst display name
   var names = [];
-  ANALYSTS.forEach(function(a, i) { if (selectedAnalysts[i]) names.push(a.name); });
-  var nameStr = names.length <= 3
-    ? names.join(', ')
-    : names.slice(0,2).join(', ') + ' +' + (names.length-2) + ' more';
+  var selectedCount = Object.values(selectedAnalysts).filter(Boolean).length;
+  
+  if (selectedCount === 0) {
+    // Show "All Analysts" when none are manually selected
+    var nameStr = 'All Analysts';
+  } else {
+    // Show only selected analysts
+    ANALYSTS.forEach(function(a, i) { if (selectedAnalysts[i]) names.push(a.name); });
+    var nameStr = names.length <= 3
+      ? names.join(', ')
+      : names.slice(0,2).join(', ') + ' +' + (names.length-2) + ' more';
+  }
 
   var results = [];
 
@@ -893,10 +903,14 @@ function generate() {
     var params = {
       'sort':                   'RECENTLY_EDITED',
       'view':                   'list',
-      'filter[assignees]':      assignees,
       'filter[child_team_ids]': '[72143,72144]',
       'v':                      '2'
     };
+    
+    // Only add assignees filter if analysts are selected
+    if (selectedCount > 0) {
+      params['filter[assignees]'] = assignees;
+    }
 
     if (type === 'created') {
       params['filter[date][start]'] = utcStart;
