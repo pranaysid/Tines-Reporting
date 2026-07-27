@@ -135,7 +135,7 @@
     color: var(--accent);
   }
 
-  /* DEVICE / DEFENDER — sits right below the global/comment row */
+  /* DEVICE LOOKUP — sits below the global/comment row, with extra breathing room */
   .device-row { display: flex; gap: 8px; margin-top: 14px; }
 
   .device-input {
@@ -154,7 +154,10 @@
   .device-input:focus { border-color: var(--accent3); }
   .device-input::placeholder { color: var(--text-dim); }
 
-  .btn-defender {
+  .device-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+  .btn-defender, .btn-falcon {
+    flex: 1;
     background: var(--surface2);
     border: 1px solid var(--border-bright);
     color: var(--text);
@@ -167,6 +170,7 @@
     white-space: nowrap;
   }
   .btn-defender:hover { background: var(--border); border-color: var(--accent3); color: var(--accent3); }
+  .btn-falcon:hover   { background: var(--border); border-color: var(--accent2); color: var(--accent2); }
 
   /* TI TOOL — fixed top-right */
   .ti-btn {
@@ -417,8 +421,11 @@
       <button class="mode-btn"        id="btn-comment" onclick="setMode('comment')">💬 Comment</button>
     </div>
     <div class="device-row">
-      <input class="device-input" id="deviceInput" type="text" placeholder="🖥️ Device ID..." onkeydown="if(event.key==='Enter') openDefender()">
-      <button class="btn-defender" onclick="openDefender()">Defender</button>
+      <input class="device-input" id="deviceInput" type="text" placeholder="🖥️ Device ID / Hostname..." onkeydown="if(event.key==='Enter') openDefender()">
+    </div>
+    <div class="device-actions">
+      <button class="btn-defender" onclick="openDefender()">🛡️ Defender</button>
+      <button class="btn-falcon" onclick="openFalcon()">🦅 CS Falcon</button>
     </div>
   </div>
 
@@ -513,6 +520,13 @@
     var id = document.getElementById('deviceInput').value.trim();
     if (!id) return;
     var url = 'https://security.microsoft.com/machines/' + encodeURIComponent(id);
+    window.open(url, '_blank');
+  }
+
+  function openFalcon() {
+    var id = document.getElementById('deviceInput').value.trim();
+    if (!id) return;
+    var url = 'https://falcon.us-2.crowdstrike.com/hosts/hosts?filter=' + encodeURIComponent("hostname:'" + id + "'");
     window.open(url, '_blank');
   }
 
